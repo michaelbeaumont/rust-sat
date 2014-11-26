@@ -6,3 +6,6 @@ authors = ["michaelbeaumont <mjboamail@gmail.com>"]
 [lib]
 name = "sat"
 path = "src/lib.rs"
+
+[[test]]
+name = "tests"
