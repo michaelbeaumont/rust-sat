@@ -1,0 +1,11 @@
+[package]
+name = "sat"
+version = "0.0.1"
+authors = ["michaelbeaumont <mjboamail@gmail.com>"]
+
+[lib]
+name = "sat"
+path = "src/lib.rs"
+
+[dependencies]
+vec_map="*"
