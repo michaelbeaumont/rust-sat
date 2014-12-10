@@ -2,12 +2,12 @@
 #[phase(plugin, link)] extern crate log;
 
 use std::collections::HashMap;
-use std::num::SignedInt;
 
 use Lit::{P, N};
 use Satness::{SAT};
 
 pub mod naive;
+pub mod parse;
 
 pub trait Negable {
     fn not(&self) -> Self;
@@ -20,16 +20,6 @@ pub enum Lit {
 }
 
 impl<'a> Lit {
-    pub fn from_int(i: int) -> Lit {
-        if i > 0 {
-            P(i.to_string())
-        }
-        else {
-            N(i.abs().to_string())
-        }
-
-    }
-
     fn get_truth_as(&self, v: bool) -> bool {
         match *self {
             P(_) => v,

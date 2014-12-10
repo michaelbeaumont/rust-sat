@@ -5,13 +5,11 @@ use super::Satness::{UNSAT, SAT};
 
 pub struct Solver {
     //Interpretation stack
-    //the var we set to true, whether there was a post_conflict and the interp
+    //the var we set to true, whether this was after a conflict and the interp
     interp_stack: Vec<(Lit, bool, Interp)>,
 
     //Current interpretation
     curr_interp: Interp,
-    //Are we post conflict
-    post_confl: bool,
 
     //Clauses and constraints
     clss: CNF,
@@ -27,7 +25,6 @@ impl Solver {
             curr_interp:HashMap::new(),
             interp_stack:Vec::new(),
             clss: formula, 
-            post_confl: false,
             prop_queue: RingBuf::new()}
     }
 
@@ -55,8 +52,14 @@ impl Solver {
             let poss_unit = get_unit(c, &self.curr_interp);
             match poss_unit {
                 Some(u) => {
-                    info!("Found implied unit: {}", u);
-                    self.prop_queue.push_back(u)
+                    let mut found = false;
+                    for p in self.prop_queue.iter() {
+                        if *p == u { found = true; }
+                    }
+                    if !found {
+                        info!("Found implied unit: {} in {}", u, c);
+                        self.prop_queue.push_back(u)
+                    }
                 }
                 _    => {}
             }
@@ -64,10 +67,9 @@ impl Solver {
 
     }
 
-    fn backtrack(&mut self, constr_lit: &Lit) -> bool {
+    fn backtrack(&mut self) -> bool {
         //just reverse the most recent non post_conflicted assignment
         //reversing also all the propagated stuff
-        info!("Conflict at {}", constr_lit);
         //for one level change nothing
         loop {
             info!("Backtrack up a level");
@@ -75,10 +77,14 @@ impl Solver {
                 Some((last, was_post_confl, a)) => {
                     info!("Unsetting {}", last);
                     if !was_post_confl {
-                        self.curr_interp = a.clone();
-                        self.assign_true(&last.not());
+                        self.curr_interp = a;
                         info!("Trying {}, set: {}  -> true", last.not(), last.id());
-                        self.post_confl = true;
+                        self.interp_stack.push(
+                            (last.clone(),
+                             true,
+                             self.curr_interp.clone()
+                            ));
+                        self.assign_true(&last.not());
                         self.prop_queue.clear();
                         return true;
                     }
@@ -146,7 +152,8 @@ pub fn solve_naive(s: &mut Solver) -> Satness {
                 if s.have_conflict(&constr_lit) {
                     //just reverse the most recent non post_conflicted assignment
                     //reversing also all the propagated stuff
-                    let res = s.backtrack(&constr_lit);
+                    info!("Conflict at {}", constr_lit);
+                    let res = s.backtrack();
                     if !res {
                         let reason = format!("Found conflict with {}",
                                              constr_lit.id());
@@ -154,10 +161,13 @@ pub fn solve_naive(s: &mut Solver) -> Satness {
                     }
                 }
                 else {
-                    info!("Processing: {}", constr_lit)
-                        s.assign_true(&constr_lit);
+                    info!("Processing from queue {}, set: {} -> {}",
+                          constr_lit,
+                          constr_lit.id(),
+                          constr_lit.get_truth_as(true));
+                    s.assign_true(&constr_lit);
                 }
-                info!("Propagate constraints");
+                //info!("Propagate constraints");
                 s.propagate();
             }
             None  =>
@@ -172,12 +182,11 @@ pub fn solve_naive(s: &mut Solver) -> Satness {
                               actual_var.get_truth_as(true));
                         s.interp_stack.push(
                             (actual_var.clone(),
-                             s.post_confl,
+                             false,
                              s.curr_interp.clone()
                             ));
                         s.assign_true(&actual_var);
-                        s.post_confl = false;
-                        info!("Propagate constraints");
+                        //info!("Propagate constraints");
                         s.propagate();
                     },
                     None          => return SAT(s.curr_interp.clone())
