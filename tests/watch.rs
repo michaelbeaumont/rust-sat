@@ -4,11 +4,11 @@ use std::io::{File, BufferedReader};
 
 use sat::Lit::{P, N};
 use sat::SATSolver;
-use sat::naive::Solver;
+use sat::watch::Solver;
 use sat::parse;
 
 #[test]
-fn test_solve_naive() {
+fn test_solve_watch() {
     let cnf1 = vec![vec![P("X".to_string()), N("Y".to_string())],
                     vec![N("X".to_string())]
                     ];
@@ -26,7 +26,7 @@ fn test_solve_naive() {
     assert_eq!(ans2.is_sat(), false);
 
     let cnf3 = vec![vec![N("X".to_string()), P("X".to_string())],
-                    vec![P("X".to_string()), P("Y".to_string())],
+                    vec![P("X".to_string()), P("Y".to_string()), P("R".to_string())],
                     vec![P("X".to_string()), N("Y".to_string())]
                     ];
     println!("Test 3: {}", cnf3);
@@ -65,9 +65,9 @@ fn test_solve_parsed() {
             let mut solver: Solver = SATSolver::create(cnf);
             let solvable = solver.solve();
             assert_eq!(solvable.is_sat(), true);
-            println!("Parsed SAT Formula is {}", solver.solve());
+            println!("Parsed SAT Formula is {}", solver.solve())
         },
         _     => panic!("FAIL")
     }
-
 }
+

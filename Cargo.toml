@@ -9,3 +9,6 @@ path = "src/lib.rs"
 
 [[test]]
 name = "tests"
+
+[[bench]]
+name = "benches"

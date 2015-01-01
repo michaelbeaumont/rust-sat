@@ -1,6 +1,5 @@
 use std::collections::{HashMap, RingBuf};
-use super::{Lit, Negable, CNF, Clause, Interp};
-use super::Satness;
+use super::{Lit, Negable, CNF, Clause, Interp, SATSolver, Satness};
 use super::Satness::{UNSAT, SAT};
 
 pub struct Solver {
@@ -19,22 +18,52 @@ pub struct Solver {
 
 }
 
-impl Solver {
-    pub fn create_solver(formula: CNF) -> Solver {
-        Solver{
-            curr_interp:HashMap::new(),
-            interp_stack:Vec::new(),
-            clss: formula, 
-            prop_queue: RingBuf::new()}
+fn get_unit(c: &Clause, assigned: &Interp) -> Option<Lit> {
+    //This functions should return Some(x)
+    //iff
+    //  x is the only uninterpreted var
+    //  OR there are no uninterpreted vars
+    //      AND x is the first var with interp(x) = 0
+    //otherwise return None
+    let (mut maybe_unit, mut have_unassned):(Option<Lit>, bool) = (None, false);
+    debug!("Check for units in: {}", c);
+    for l in c.iter() {
+        match assigned.get_val(l) {
+            Some(b) => {
+                debug!("Var {} assigned {}", l, l.get_truth_as(*b));
+                if l.get_truth_as(*b) {
+                    debug!("Satisfies clause");
+                    return None
+                }
+                else if maybe_unit.is_none() {
+                    debug!("Store as last resort for satisfiability");
+                    maybe_unit = Some(l.clone());
+                }
+            },
+            None    => {
+                if !have_unassned {
+                    debug!("Found first unassigned variable");
+                    have_unassned = true;
+                    maybe_unit = Some(l.clone());
+                }
+                else {
+                    debug!("Found second unassigned variable, no unit");
+                    return None
+                }
+            }
+        }
     }
+    maybe_unit
+}
 
+impl Solver {
     fn assign_true(&mut self, l: &Lit) {
-        self.curr_interp.insert(l.id().to_string(), l.get_truth_as(true));
+        self.curr_interp.assign_true(l);
     }
 
     fn find_var(&self) -> Option<Lit> {
         for x in self.clss.iter().flat_map(|x| x.iter()) {
-            if self.curr_interp.get(&x.id().to_string()).is_none() {
+            if self.curr_interp.get_val(x).is_none() {
                 return Some(x.clone());
             }
         }
@@ -42,7 +71,7 @@ impl Solver {
     }
 
     fn have_conflict(&self, lit: &Lit) -> bool {
-        let m_cur_assn = self.curr_interp.get(&lit.id().to_string());
+        let m_cur_assn = self.curr_interp.get_val(lit);
         let new_assn = lit.get_truth_as(true);
         m_cur_assn.is_some() &&  *m_cur_assn.unwrap() == !new_assn
     }
@@ -84,8 +113,10 @@ impl Solver {
                              true,
                              self.curr_interp.clone()
                             ));
-                        self.assign_true(&last.not());
+                        let last_not = last.not();
+                        self.assign_true(&last_not);
                         self.prop_queue.clear();
+                        self.propagate();
                         return true;
                     }
                 },
@@ -98,99 +129,70 @@ impl Solver {
     }
 }
 
-fn get_unit(c: &Clause, assigned: &Interp) -> Option<Lit> {
-    //This functions should return Some(x)
-    //iff
-    //  x is the only uninterpreted var
-    //  OR there are no uninterpreted vars
-    //      AND x is the first var with interp(x) = 0
-    //otherwise return None
-    let (mut maybe_unit, mut have_unassned):(Option<Lit>, bool) = (None, false);
-    debug!("Check for units in: {}", c);
-    for l in c.iter() {
-        match assigned.get(&l.id().to_string()) {
-            Some(b) => {
-                debug!("Var {} assigned {}", l, l.get_truth_as(*b));
-                if l.get_truth_as(*b) {
-                    debug!("Satisfies clause");
-                    return None
-                }
-                else if maybe_unit.is_none() {
-                    debug!("Store as last resort for satisfiability");
-                    maybe_unit = Some(l.clone());
-                }
-            },
-            None    => {
-                if !have_unassned {
-                    debug!("Found first unassigned variable");
-                    have_unassned = true;
-                    maybe_unit = Some(l.clone());
-                }
-                else {
-                    debug!("Found second unassigned variable, no unit");
-                    return None
-                }
-            }
+impl SATSolver for Solver {
+    fn create(formula: CNF) -> Solver {
+        Solver{
+            curr_interp: Interp(HashMap::new()),
+            interp_stack:Vec::new(),
+            clss: formula, 
+            prop_queue: RingBuf::new()}
+    }
+    
+    fn solve(&mut self) -> Satness {
+        let units: Vec<Lit> = self.clss.iter().filter_map(
+            |c| if c.len() == 1 {Some(c[0].clone())} else {None}
+            ).collect();
+        for unit in units.iter() {
+            info!("Found top level unit: {}", unit);
+            self.prop_queue.push_back(unit.clone());
         }
-    }
-    maybe_unit
-}
 
-pub fn solve_naive(s: &mut Solver) -> Satness {
-    let units: Vec<Lit> = s.clss.iter().filter_map(
-            |c| get_unit(c, &s.curr_interp)
-        ).collect();
-
-    for unit in units.iter() {
-        info!("Found top level unit: {}", unit);
-        s.prop_queue.push_back(unit.clone());
-    }
-
-    loop {
-        match s.prop_queue.pop_front() {
-            Some(constr_lit) => {
-                if s.have_conflict(&constr_lit) {
-                    //just reverse the most recent non post_conflicted assignment
-                    //reversing also all the propagated stuff
-                    info!("Conflict at {}", constr_lit);
-                    let res = s.backtrack();
-                    if !res {
-                        let reason = format!("Found conflict with {}",
-                                             constr_lit.id());
-                        return UNSAT(reason)
+        loop {
+            match self.prop_queue.pop_front() {
+                Some(constr_lit) => {
+                    if self.have_conflict(&constr_lit) {
+                        //just reverse the most recent non post_conflicted assignment
+                        //reversing also all the propagated stuff
+                        info!("Conflict at {}", constr_lit);
+                        let res = self.backtrack();
+                        if !res {
+                            let reason = format!("Found conflict with {}",
+                                                 constr_lit.id());
+                            return UNSAT(reason)
+                        }
                     }
+                    else {
+                        info!("Processing from queue {}, set: {} -> {}",
+                              constr_lit,
+                              constr_lit.id(),
+                              constr_lit.get_truth_as(true));
+                        self.assign_true(&constr_lit);
+                        self.propagate();
+                    }
+                    //info!("Propagate constraints");
                 }
-                else {
-                    info!("Processing from queue {}, set: {} -> {}",
-                          constr_lit,
-                          constr_lit.id(),
-                          constr_lit.get_truth_as(true));
-                    s.assign_true(&constr_lit);
-                }
-                //info!("Propagate constraints");
-                s.propagate();
+                None  =>
+                    // here we need to pick a new var
+                    // because we know nothing more is constrainted
+                    // pick it and add it to the stack
+                    match self.find_var() {
+                        Some(actual_var) => {
+                            info!("Trying {}, set: {} -> {}",
+                                  actual_var,
+                                  actual_var.id(),
+                                  actual_var.get_truth_as(true));
+                            self.interp_stack.push(
+                                (actual_var.clone(),
+                                 false,
+                                 self.curr_interp.clone()
+                                 ));
+                            self.assign_true(&actual_var);
+                            //info!("Propagate constraints");
+                            self.propagate();
+                        },
+                        None          => return SAT(self.curr_interp.clone())
+                    }
             }
-            None  =>
-                // here we need to pick a new var
-                // because we know nothing more is constrainted
-                // pick it and add it to the stack
-                match s.find_var() {
-                    Some(actual_var) => {
-                        info!("Trying {}, set: {} -> {}",
-                              actual_var,
-                              actual_var.id(),
-                              actual_var.get_truth_as(true));
-                        s.interp_stack.push(
-                            (actual_var.clone(),
-                             false,
-                             s.curr_interp.clone()
-                            ));
-                        s.assign_true(&actual_var);
-                        //info!("Propagate constraints");
-                        s.propagate();
-                    },
-                    None          => return SAT(s.curr_interp.clone())
-                }
         }
     }
 }
@@ -200,16 +202,17 @@ pub fn solve_naive(s: &mut Solver) -> Satness {
 mod tests {
     use super::super::Lit::P;
     use super::super::Lit::N;
+    use super::super::Interp;
 
     use std::collections::HashMap;
 
     #[test]
     fn test_get_unit() {
         let clause1 = vec![P("X".to_string()), N("Y".to_string())];
-        let mut assigned = HashMap::new();
-        assigned.insert("X".to_string(), false);
+        let mut assigned = Interp(HashMap::new());
+        assigned.assign_true(&N("X".to_string()));
         assert_eq!(Some(N("Y".to_string())), super::get_unit(&clause1, &assigned));
-        assigned.insert("Y".to_string(), false);
+        assigned.assign_true(&N("Y".to_string()));
         assert_eq!(None, super::get_unit(&clause1, &assigned));
         let clause2 = vec![P("X".to_string()), 
                             N("Y".to_string()),

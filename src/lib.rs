@@ -1,13 +1,16 @@
 #![feature(phase)]
-#[phase(plugin, link)] extern crate log;
+#[phase(plugin, link)]
+extern crate log;
 
 use std::collections::HashMap;
 
 use Lit::{P, N};
 use Satness::{SAT};
 
-pub mod naive;
 pub mod parse;
+
+pub mod naive;
+pub mod watch;
 
 pub trait Negable {
     fn not(&self) -> Self;
@@ -49,8 +52,21 @@ pub type Clause = Vec<Lit>;
 
 pub type CNF = Vec<Clause>;
 
-pub type Interp = HashMap<String, bool>;
+#[deriving(Show, Clone, PartialEq, Eq)]
+pub struct Interp(HashMap<String, bool>);
 
+impl Interp {
+    pub fn get_val(&self, lit: &Lit) -> Option<&bool> {
+        match *self {
+            Interp(ref l) => l.get(&lit.id().to_string())
+        }
+    }
+    pub fn assign_true(&mut self, lit: &Lit) {
+        let _ = match *self {
+            Interp(ref mut l) => l.insert(lit.id().to_string(), lit.get_truth_as(true))
+        };
+    }
+}
 #[deriving(Show)]
 pub enum Satness {
     SAT(Interp),
@@ -64,4 +80,9 @@ impl Satness {
             _   => false
         }
     }
+}
+
+pub trait SATSolver {
+    fn create(formula: CNF) -> Self;
+    fn solve(&mut self) -> Satness;
 }
