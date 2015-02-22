@@ -1,6 +1,6 @@
 extern crate sat;
 
-use sat::watch::Solver;
+use sat::nonchro::Solver;
 
 use satsolver;
 

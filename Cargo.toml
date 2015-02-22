@@ -12,3 +12,8 @@ name = "tests"
 
 [[bench]]
 name = "benches"
+
+[dependencies]
+log="*"
+env_logger="0.2.1"
+glob="*"

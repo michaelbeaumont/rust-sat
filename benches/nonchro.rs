@@ -4,7 +4,7 @@ extern crate sat;
 
 use test::Bencher;
 
-use sat::watch::Solver;
+use sat::nonchro::Solver;
 
 #[bench]
 fn bench_sat(b: &mut Bencher) {
