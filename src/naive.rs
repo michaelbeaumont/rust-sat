@@ -1,4 +1,5 @@
-use std::collections::{VecMap, VecDeque};
+use vec_map::VecMap;
+use std::collections::VecDeque;
 use super::{Lit, CNF, Clause, Interp, SATSolver, Satness};
 use super::Satness::{UNSAT, SAT};
 
@@ -208,7 +209,7 @@ mod tests {
     use super::super::Id;
     use super::super::Interp;
 
-    use std::collections::{VecMap};
+    use vec_map::VecMap;
 
     #[test]
     fn test_get_unit() {

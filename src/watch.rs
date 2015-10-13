@@ -1,5 +1,6 @@
-use std::collections::{VecMap, VecDeque};
-use std::collections::vec_map::Entry::{Occupied, Vacant};
+use vec_map::VecMap;
+use vec_map::Entry::{Occupied, Vacant};
+use std::collections::VecDeque;
 
 use super::{Lit, Interp, CNF, Clause, SATSolver};
 use super::Satness;

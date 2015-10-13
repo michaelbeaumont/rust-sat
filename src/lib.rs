@@ -1,12 +1,10 @@
-#![feature(box_syntax)]
-#![feature(box_patterns)]
-#![feature(collections)]
-#![feature(core)]
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+extern crate vec_map;
+extern crate bit_set;
 
-use std::collections::VecMap;
+use vec_map::VecMap;
 
 use Lit::{P, N};
 use Satness::{SAT};
@@ -34,10 +32,10 @@ impl Lit {
         }
     }
 
-    pub fn id(&self) -> Id {
+    pub fn id(&self) -> &Id {
         match *self {
-            P(ref s) => s.clone(),
-            N(ref s) => s.clone()
+            P(ref s) => s,
+            N(ref s) => s
         }
     }
 
@@ -64,8 +62,8 @@ pub type CNF = Vec<Clause>;
 
 type Map<T> = VecMap<T>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Interp(pub Map<bool>);
+#[derive(Debug, Clone)]
+pub struct Interp(Map<bool>);
 
 
 impl Interp {
@@ -78,14 +76,14 @@ impl Interp {
     }
     
     pub fn get_val(&self, lit: &Lit) -> Option<bool> {
-        let Id(id) = lit.id();
+        let &Id(id) = lit.id();
         match *self {
             Interp(ref l) => l.get(&id).map(|&b| lit.eval(b))
         }
     }
 
     pub fn set_true(&mut self, lit: &Lit) {
-        let Id(id) = lit.id();
+        let &Id(id) = lit.id();
         match *self {
             Interp(ref mut l) => l.insert(id, lit.eval(true))
         };

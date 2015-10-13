@@ -1,5 +1,7 @@
-use std::collections::{VecMap, BitSet, VecDeque};
-use std::collections::vec_map::Entry::{Occupied, Vacant};
+use vec_map::VecMap;
+use vec_map::Entry::{Occupied, Vacant};
+use bit_set::BitSet;
+use std::collections::VecDeque;
 use std::cmp::max;
 
 use super::{Id, Lit, Map, Interp, CNF, Clause, SATSolver};
@@ -98,15 +100,15 @@ fn get_impl_clause<'a>(cls: &'a Clause,
                        -> Box<Iterator<Item = Lit> + 'a>
 {
     match confl_lit {
-        None => box cls.iter().map(|l| l.not()),
+        None => Box::new(cls.iter().map(|l| l.not())),
         Some(confl_val) => { 
-            box cls.iter().filter_map(
+            Box::new(cls.iter().filter_map(
                 move |lit| 
                 if lit == confl_val {
                     None }
                 else {
                     Some(lit.not())
-                })
+                }))
         }
     }
 }
@@ -162,7 +164,7 @@ impl Solver {
     {
         self.interp.set_true(lit);
         let dec_lvl = self.level();
-        let Id(id) = lit.id();
+        let &Id(id) = lit.id();
         self.track.insert(id, (dec_lvl, cause));
     }
 
@@ -170,9 +172,9 @@ impl Solver {
         let new_ind: usize = self.clss.len();
         let mut indices = (0,0);
         let mut max_dec = 0;
-        for i in (0..cls.len()) {
+        for i in 0..cls.len() {
             let lit = &cls[i];
-            let Id(id) = lit.id();
+            let &Id(id) = lit.id();
             if lit == this_lit {
                 indices.0 = i;
             }
@@ -206,7 +208,7 @@ impl Solver {
         let mut seen = BitSet::new();
 
         while let Some(lit) = lit_queue.pop_front() {
-            let Id(id) = lit.id();
+            let &Id(id) = lit.id();
             if let Some(&(ref dec_lvl, cause_)) = self.track.get(&id) {
                 if seen.contains(&id) {
                     continue;}
