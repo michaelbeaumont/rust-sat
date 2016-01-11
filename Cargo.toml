@@ -7,6 +7,10 @@ authors = ["michaelbeaumont <mjboamail@gmail.com>"]
 name = "sat"
 path = "src/lib.rs"
 
+[[bin]]
+name = "rust-sat"
+path = "src/main.rs"
+
 [[test]]
 name = "tests"
 
@@ -19,3 +23,5 @@ env_logger="*"
 glob="*"
 vec_map="*"
 bit-set="*"
+docopt="*"
+rustc-serialize="*"

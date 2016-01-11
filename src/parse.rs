@@ -38,7 +38,7 @@ impl<'a> CNFParser<'a> {
         let buff_ = buff.char_indices();
         CNFParser { curr: ' ', pos: 0, buff: buff_}
     }
-    
+
     fn parse_file(&mut self) -> Parse<CNF> {
         let mut formula = Vec::new();
         loop {

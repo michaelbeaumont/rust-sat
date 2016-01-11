@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-#![feature(box_patterns)]
 extern crate env_logger;
 extern crate log;
 extern crate glob;

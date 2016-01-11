@@ -11,7 +11,7 @@ use sat::Lit::{P, N};
 
 #[test]
 fn parse_file(){
-    let file = File::open(&Path::new("./tests/sat/uf20-01.cnf"));
+    let file = File::open(&Path::new("./tests/uf20-91/uf20-0101.cnf"));
     let mut s = String::new();
     let file_read = file.and_then(|mut f| f.read_to_string(&mut s));
     match file_read {
