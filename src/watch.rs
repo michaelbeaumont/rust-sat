@@ -124,7 +124,7 @@ impl Solver {
     }
 
     fn check_watchers(&mut self, lit: Lit) -> Option<usize> {
-        self.watches.get(&lit.as_usize()).cloned().and_then(
+        self.watches.get(lit.as_usize()).cloned().and_then(
             |clause_inds| {
                 let mut new_inds = Vec::new();
                 let mut conflict_seen = None;
@@ -148,8 +148,7 @@ impl Solver {
                             conflict_seen = Some(cls_ind);
                         }
                         else if let PropRes::Unit(unit_lit) = bcp_res {
-                            self.prop_queue.push_back(
-                                (unit_lit));
+                            self.prop_queue.push_back(unit_lit);
                         }
                     }
                 }

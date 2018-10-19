@@ -2,7 +2,7 @@ extern crate sat;
 
 use sat::watch::Solver;
 
-use satsolver;
+mod satsolver;
 
 #[test]
 fn test_solve_simple() {

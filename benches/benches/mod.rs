@@ -8,15 +8,11 @@ use std::io::Read;
 use std::path::Path;
 use std::fs::File;
 
-use glob::glob;
+use self::glob::glob;
 
 use sat::{Satness, check, SATSolver};
 
 use sat::parse;
-
-mod watch;
-mod naive;
-mod nonchro;
 
 fn path_to_string(path: &Path) -> std::io::Result<String> {
     let file = File::open(path);

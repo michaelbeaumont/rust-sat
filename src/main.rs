@@ -1,11 +1,11 @@
 #[macro_use]
-extern crate rustc_serialize;
+extern crate serde_derive;
+extern crate serde;
 extern crate log;
 extern crate env_logger;
 extern crate docopt;
 extern crate sat;
 
-use rustc_serialize::Decodable;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
@@ -25,10 +25,10 @@ Options:
     --help         Show this message.
 ";
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 enum SolverType { Naive, Watch, Nonchro }
 
-#[derive(RustcDecodable)]
+#[derive(Deserialize)]
 struct Args {
     arg_inputfile: String,
     flag_solver: Option<SolverType>,
@@ -47,7 +47,7 @@ pub fn solve_file<Solver: SATSolver>(mut solver: Solver) {
 }
 
 pub fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE).and_then(|d| d.deserialize()).unwrap_or_else(|e| e.exit());
 
     let filename: &str = args.arg_inputfile.as_ref();
     let file = File::open(&Path::new(filename));

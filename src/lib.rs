@@ -52,7 +52,6 @@ impl Lit {
             N(Id(id)) => id*2+1
         }
     }
-    
 }
 
 
@@ -74,11 +73,11 @@ impl Interp {
     pub fn with_capacity(capacity: usize) -> Interp {
         Interp(Map::with_capacity(capacity))
     }
-    
+
     pub fn get_val(&self, lit: &Lit) -> Option<bool> {
         let &Id(id) = lit.id();
         match *self {
-            Interp(ref l) => l.get(&id).map(|&b| lit.eval(b))
+            Interp(ref l) => l.get(id).map(|&b| lit.eval(b))
         }
     }
 

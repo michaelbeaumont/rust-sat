@@ -150,7 +150,7 @@ impl Solver {
     fn level(&self) -> DecLevel {
         DecLevel(self.interp_stack.len())
     }
-    
+
     fn find_var(&self) -> Option<Lit> {
         for x in self.clss.iter().flat_map( |x| x.cls.iter()) {
             if self.interp.get_val(x).is_none() {
@@ -179,7 +179,7 @@ impl Solver {
                 indices.0 = i;
             }
             else {
-                self.track.get(&id).map(
+                self.track.get(id).map(
                     |&(DecLevel(dec),_)|
                     if dec > max_dec {
                         max_dec = dec;
@@ -192,12 +192,12 @@ impl Solver {
         self.clss.push(WatchedClause{indices: indices, cls: cls});
         new_ind
     }
-    
 
-    fn trace_conflict(&self,
-                          curr_dec_lvl: &DecLevel,
-                          confl: &Clause)
-                          -> (Clause, DecLevel)
+    fn trace_conflict(
+        &self,
+        curr_dec_lvl: &DecLevel,
+        confl: &Clause)
+        -> (Clause, DecLevel)
     {
         let mut learned = Vec::new();
         let mut back_lvl = DecLevel(0);
@@ -209,11 +209,12 @@ impl Solver {
 
         while let Some(lit) = lit_queue.pop_front() {
             let &Id(id) = lit.id();
-            if let Some(&(ref dec_lvl, cause_)) = self.track.get(&id) {
-                if seen.contains(&id) {
-                    continue;}
-                else {
-                    seen.insert(id);}
+            if let Some(&(ref dec_lvl, cause_)) = self.track.get(id) {
+                if seen.contains(id) {
+                    continue;
+                } else {
+                    seen.insert(id);
+                }
 
                 if let Some(cause) = cause_ {
                     if dec_lvl == curr_dec_lvl {
@@ -231,9 +232,9 @@ impl Solver {
         }
         (learned, back_lvl)
     }
-    
+
     fn check_watchers(&mut self, lit: Lit) -> Implicant {
-        self.watches.get(&lit.as_usize()).cloned().and_then(
+        self.watches.get(lit.as_usize()).cloned().and_then(
             |clause_inds| {
                 let mut new_inds = Vec::new();
                 let mut conflict_seen = None;
@@ -286,11 +287,11 @@ impl Solver {
                 self.process(decision, None)})
     }
 
-    fn backtrack(&mut self,
-                 cause: Clause,
-                 DecLevel(back_lvl): DecLevel)
-                 -> Safety
-    {
+    fn backtrack(
+        &mut self,
+        cause: Clause,
+        DecLevel(back_lvl): DecLevel
+    ) -> Safety {
         self.interp_stack.truncate(back_lvl);
         match self.interp_stack.pop() {
             //here use the learned clause as a cause
@@ -319,7 +320,7 @@ impl Solver {
                 &self.clss[conf_i].cls);
         while back_lvl < dec_lvl {
             dec_lvl = back_lvl;
-            let trace = 
+            let trace =
                 self.trace_conflict(
                     &dec_lvl,
                     &cause);
@@ -366,30 +367,29 @@ impl SATSolver for Solver {
                 add_watched(&mut watches, lit, ind);}
             ind = ind + 1;
             if cls.len() > 1 {
-                WatchedClause{indices: (0,1), cls: cls} }
-            else {
-                WatchedClause{indices: (0,0), cls: cls} }})
-            .collect();
+                WatchedClause{indices: (0,1), cls: cls}
+            } else {
+                WatchedClause{indices: (0,0), cls: cls} }
+        }).collect();
         //debug!("Watched: {:?}",clss);
         //debug!("Watches: {:?}",watches);
         Solver{
             interp: interp.unwrap_or_else(|| Interp(VecMap::new())),
             interp_stack: Vec::new(),
-            clss: clss,
+            clss,
             prop_queue: VecDeque::new(),
             track: VecMap::new(),
-            watches: watches
+            watches,
         }
     }
 
     fn solve(&mut self) -> Satness {
         //handle top level units
         for unit in self.clss.iter().filter_map(
-            |c|
-            if c.cls.len() == 1 {
-                Some(c.cls[0].clone())}
-            else {None})
-        {
+            |c| if c.cls.len() == 1 {
+                Some(c.cls[0].clone())
+            } else {None}
+        ) {
             info!("Found top level unit: {:?}", unit);
             self.prop_queue.push_back((unit,None))}
 
@@ -400,8 +400,9 @@ impl SATSolver for Solver {
                     match self.decide_var(None) {
                         None => return SAT(self.interp.clone()),
                         Some(safety) => safety},
-                e => e};
-            
+                e => e
+            };
+
             if let Conflict = processing {
                 let reason = format!("Found conflict");
                 return UNSAT(reason)
@@ -421,8 +422,8 @@ mod tests {
 
     #[test]
     fn test_nonchro_backtrack() {
-        env_logger::init().unwrap();
-        
+        env_logger::init();
+
         let _clause1 = vec![N(Id(1)), P(Id(2))];
         let _clause2 = vec![N(Id(1)), P(Id(3)), P(Id(9))];
         let _clause3 = vec![N(Id(2)), N(Id(3)), P(Id(4))];

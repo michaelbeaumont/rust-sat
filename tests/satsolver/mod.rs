@@ -2,12 +2,11 @@ extern crate glob;
 
 extern crate sat;
 
-use std;
 use std::io::Read;
 use std::path::Path;
 use std::fs::File;
 
-use glob::glob;
+use self::glob::glob;
 
 use sat::{Id, Satness, check, SATSolver};
 use sat::Lit::{P, N};

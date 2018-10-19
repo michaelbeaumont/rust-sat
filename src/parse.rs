@@ -4,7 +4,7 @@ use std::str::CharIndices;
 use super::{Id, Lit, CNF, Clause};
 
 #[derive(Debug)]
-enum ParseError {
+pub enum ParseError {
     Syntax(Box<Debug>),
     EOF(usize)
 }
@@ -34,7 +34,6 @@ struct CNFParser<'a> {
 
 impl<'a> CNFParser<'a> {
     fn new(buff: &'a String) -> CNFParser<'a> {
-        //let next = buff.char_range_at(0);
         let buff_ = buff.char_indices();
         CNFParser { curr: ' ', pos: 0, buff: buff_}
     }
@@ -57,7 +56,7 @@ impl<'a> CNFParser<'a> {
         try!(self.consume_whitespace());
         //if we have a comment or %, ignore the line
         //TODO: take p info into account
-        if self.curr == 'c' || self.curr == 'p' || self.curr == '%' { 
+        if self.curr == 'c' || self.curr == 'p' || self.curr == '%' {
             self.parse_comment().and(self.parse_line())
         }
         //we have a 0 at the beginning of the line
@@ -83,7 +82,7 @@ impl<'a> CNFParser<'a> {
             //remove whitespace inbetween
             match self.consume_whitespace() {
                 Err(ParseError::EOF(_)) => break,
-                Err(e)                    => return Err(e),
+                Err(e)                  => return Err(e),
                 _ => {}
             }
         }
@@ -105,7 +104,7 @@ impl<'a> CNFParser<'a> {
     fn parse_ident(&mut self) -> Parse<Id> {
         let mut lit = String::new();
         while !CNFParser::is_whitespace(self.curr) {
-            lit.push(self.curr);  
+            lit.push(self.curr);
             //TODO: make this better with eof maybe self.curr is Option
             match self.take() {
                 Err(ParseError::EOF(_)) => break,
