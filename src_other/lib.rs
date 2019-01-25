@@ -4,6 +4,7 @@ extern crate env_logger;
 extern crate vec_map;
 extern crate bit_set;
 
+// other comment
 use vec_map::VecMap;
 
 use Lit::{P, N};
