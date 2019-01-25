@@ -24,7 +24,7 @@ pub enum Lit {
     N(Id)
 }
 
-impl Lit {
+impl Lit { //seif changes
     fn eval(&self, v: bool) -> bool {
         match *self {
             P(_) => v,
