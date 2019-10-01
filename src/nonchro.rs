@@ -98,7 +98,7 @@ fn add_watched(watches: &mut VecMap<Vec<usize>>, lit: &Lit, ind: usize) {
 fn get_impl_clause<'a>(
     cls: &'a Clause,
     confl_lit: Option<&'a Lit>,
-) -> Box<Iterator<Item = Lit> + 'a> {
+) -> Box<dyn Iterator<Item = Lit> + 'a> {
     match confl_lit {
         None => Box::new(cls.iter().map(|l| l.not())),
         Some(confl_val) => Box::new(cls.iter().filter_map(move |lit| {

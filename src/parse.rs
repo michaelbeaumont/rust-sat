@@ -5,7 +5,7 @@ use super::{Clause, Id, Lit, CNF};
 
 #[derive(Debug)]
 pub enum ParseError {
-    Syntax(Box<Debug>),
+    Syntax(Box<dyn Debug>),
     EOF(usize),
 }
 
@@ -50,14 +50,14 @@ impl<'a> CNFParser<'a> {
                 Ok(None) => return Ok(formula),
                 Err(e) => return Err(e),
             }
-            try!(self.take());
+            self.take()?;
         }
     }
 
     //add more error checking for correct file format
     fn parse_line(&mut self) -> Parse<Option<Clause>> {
         //move through any whitespace
-        try!(self.consume_whitespace());
+        self.consume_whitespace()?;
         //if we have a comment or %, ignore the line
         //TODO: take p info into account
         if self.curr == 'c' || self.curr == 'p' || self.curr == '%' {
@@ -75,7 +75,7 @@ impl<'a> CNFParser<'a> {
     fn parse_clause(&mut self) -> Parse<Clause> {
         let mut clause: Clause = Vec::new();
         //move through any whitespace
-        try!(self.consume_whitespace());
+        self.consume_whitespace()?;
         //while we're not at the end of the clause, parse lits
         while self.curr != '0' {
             match self.parse_lit() {
@@ -94,7 +94,7 @@ impl<'a> CNFParser<'a> {
 
     fn parse_lit(&mut self) -> Parse<Lit> {
         //move through any whitespace
-        try!(self.consume_whitespace());
+        self.consume_whitespace()?;
         if self.curr == '-' {
             self.take().and_then(|()| self.parse_ident().map(Lit::N))
         } else {
@@ -135,9 +135,9 @@ impl<'a> CNFParser<'a> {
         self.consume_while(&|c| CNFParser::is_whitespace(c))
     }
 
-    fn consume_while(&mut self, p: &Fn(char) -> bool) -> Parse<()> {
+    fn consume_while(&mut self, p: &dyn Fn(char) -> bool) -> Parse<()> {
         while p(self.curr) {
-            try!(self.take());
+            self.take()?;
         }
         Ok(())
     }

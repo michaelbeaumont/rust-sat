@@ -13,7 +13,7 @@ use std::path::Path;
 fn path_to_string(path: &Path) -> std::io::Result<String> {
     let file = File::open(path);
     let mut s = String::new();
-    try!(file.and_then(|mut f| f.read_to_string(&mut s)));
+    file.and_then(|mut f| f.read_to_string(&mut s))?;
     Ok(s)
 }
 
