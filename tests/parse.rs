@@ -1,25 +1,16 @@
-extern crate sat;
-
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-
 use sat::parse;
-
 use sat::Id;
 use sat::Lit::{N, P};
+use std::fs;
 
 #[test]
 fn parse_file() {
-    let file = File::open(&Path::new("./tests/uf20-91/uf20-0101.cnf"));
-    let mut s = String::new();
-    let file_read = file.and_then(|mut f| f.read_to_string(&mut s));
-    match file_read {
-        Ok(_) => {
+    match fs::read_to_string("./tests/uf20-91/uf20-0101.cnf") {
+        Ok(s) => {
             let parsed = parse::parse_file(s);
             assert_eq!(parsed.is_ok(), true);
         }
-        Err(_) => panic!("file error"),
+        Err(e) => panic!("read error: {}", e),
     }
 }
 

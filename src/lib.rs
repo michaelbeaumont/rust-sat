@@ -1,18 +1,10 @@
-#[macro_use]
-extern crate log;
-extern crate bit_set;
-extern crate env_logger;
-extern crate vec_map;
-
+use crate::Lit::{N, P};
+use crate::Satness::SAT;
 use vec_map::VecMap;
-
-use Lit::{N, P};
-use Satness::SAT;
-
-pub mod parse;
 
 pub mod naive;
 pub mod nonchro;
+pub mod parse;
 pub mod watch;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

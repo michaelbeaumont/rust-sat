@@ -1,19 +1,9 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate docopt;
-extern crate env_logger;
-extern crate log;
-extern crate sat;
-extern crate serde;
-
 use docopt::Docopt;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-
 use sat::parse;
 use sat::{naive, nonchro, watch};
 use sat::{SATSolver, Satness};
+use serde::Deserialize;
+use std::fs;
 
 // Write the Docopt usage string.
 const USAGE: &'static str = "
@@ -55,20 +45,15 @@ pub fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let filename: &str = args.arg_inputfile.as_ref();
-    let file = File::open(&Path::new(filename));
-    let mut contents = String::new();
-
-    let file_read = file.and_then(|mut f| f.read_to_string(&mut contents));
-    match file_read {
-        Ok(_) => match parse::parse_file(contents) {
+    match fs::read_to_string(&args.arg_inputfile) {
+        Ok(contents) => match parse::parse_file(contents) {
             Ok(cnf) => match args.flag_solver {
                 Some(SolverType::Naive) => solve_file(naive::Solver::create(cnf, None)),
                 Some(SolverType::Watch) => solve_file(watch::Solver::create(cnf, None)),
                 _ => solve_file(nonchro::Solver::create(cnf, None)),
             },
-            Err(_) => panic!("Error parsing file encountered."),
+            Err(e) => panic!("parse error: {:?}", e),
         },
-        Err(_) => panic!("Error reading file encountered."),
+        Err(e) => panic!("read error: {}", e),
     }
 }

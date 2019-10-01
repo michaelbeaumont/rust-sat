@@ -1,17 +1,8 @@
-extern crate glob;
-
-extern crate sat;
-
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-
-use self::glob::glob;
-
+use glob::glob;
+use sat::parse;
 use sat::Lit::{N, P};
 use sat::{check, Id, SATSolver, Satness};
-
-use sat::parse;
+use std::fs;
 
 pub fn test_solve_simple<Solver: SATSolver>() {
     let cnf1 = vec![vec![P(Id(1)), N(Id(2))], vec![N(Id(1))]];
@@ -53,13 +44,6 @@ pub fn test_solve_simple<Solver: SATSolver>() {
     assert_eq!(ans4.is_sat(), true);
 }
 
-fn path_to_string(path: &Path) -> std::io::Result<String> {
-    let file = File::open(path);
-    let mut s = String::new();
-    try!(file.and_then(|mut f| f.read_to_string(&mut s)));
-    Ok(s)
-}
-
 pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
     //for path in glob("tests/uf50-218/*.cnf").unwrap() {
     //for path in glob("tests/uf100-430/uf100-010.cnf").unwrap() {
@@ -68,7 +52,7 @@ pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
         //for path in glob("tests/uf175-753/uf175-010.cnf").unwrap() {
         //for path in glob("tests/sat/uf20-0584.cnf").unwrap() {
         println!("{:?}", &path);
-        let s: String = path_to_string(&path.unwrap()).unwrap();
+        let s = fs::read_to_string(&path.unwrap()).unwrap();
         match parse::parse_file(s) {
             Ok(cnf) => {
                 let mut solver: Solver = SATSolver::create(cnf.clone(), None);
@@ -88,12 +72,12 @@ pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
 
 pub fn test_solve_sat<Solver: SATSolver>() {
     let path20 = "tests/uf20-91/*.cnf";
-    let path125 = "tests/uf125-538/uf125-010.cnf";
-    let path150 = "tests/uf150-645/uf150-010.cnf";
+    let _path125 = "tests/uf125-538/uf125-010.cnf";
+    let _path150 = "tests/uf150-645/uf150-010.cnf";
     test_solve_file::<Solver>(path20, true)
 }
 
 pub fn test_solve_unsat<Solver: SATSolver>() {
-    let path50 = "tests/uuf50-218/*.cnf";
+    let _path50 = "tests/uuf50-218/*.cnf";
     //test_solve_file::<Solver>(path50, false)
 }

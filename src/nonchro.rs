@@ -1,14 +1,13 @@
+use self::Safety::{Conflict, Safe};
+use super::Satness;
+use super::Satness::{SAT, UNSAT};
+use super::{Clause, Id, Interp, Lit, Map, SATSolver, CNF};
 use bit_set::BitSet;
+use log::info;
 use std::cmp::max;
 use std::collections::VecDeque;
 use vec_map::Entry::{Occupied, Vacant};
 use vec_map::VecMap;
-
-use super::Satness;
-use super::Satness::{SAT, UNSAT};
-use super::{Clause, Id, Interp, Lit, Map, SATSolver, CNF};
-
-use self::Safety::{Conflict, Safe};
 
 //Watched clauses
 #[derive(Debug)]
@@ -98,7 +97,7 @@ fn add_watched(watches: &mut VecMap<Vec<usize>>, lit: &Lit, ind: usize) {
 fn get_impl_clause<'a>(
     cls: &'a Clause,
     confl_lit: Option<&'a Lit>,
-) -> Box<Iterator<Item = Lit> + 'a> {
+) -> Box<dyn Iterator<Item = Lit> + 'a> {
     match confl_lit {
         None => Box::new(cls.iter().map(|l| l.not())),
         Some(confl_val) => Box::new(cls.iter().filter_map(move |lit| {
