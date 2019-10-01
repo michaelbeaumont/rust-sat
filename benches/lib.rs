@@ -1,20 +1,11 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use glob::glob;
 use sat::{check, naive, nonchro, parse, watch, SATSolver, Satness};
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-
-fn path_to_string(path: &Path) -> std::io::Result<String> {
-    let file = File::open(path);
-    let mut s = String::new();
-    file.and_then(|mut f| f.read_to_string(&mut s))?;
-    Ok(s)
-}
+use std::fs;
 
 pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
     for path in glob(path).unwrap() {
-        let s: String = path_to_string(&path.unwrap()).unwrap();
+        let s = fs::read_to_string(&path.unwrap()).unwrap();
         match parse::parse_file(s) {
             Ok(cnf) => {
                 let mut solver: Solver = SATSolver::create(cnf.clone(), None);

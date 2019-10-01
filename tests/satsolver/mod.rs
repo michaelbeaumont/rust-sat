@@ -2,9 +2,7 @@ use glob::glob;
 use sat::parse;
 use sat::Lit::{N, P};
 use sat::{check, Id, SATSolver, Satness};
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+use std::fs;
 
 pub fn test_solve_simple<Solver: SATSolver>() {
     let cnf1 = vec![vec![P(Id(1)), N(Id(2))], vec![N(Id(1))]];
@@ -46,13 +44,6 @@ pub fn test_solve_simple<Solver: SATSolver>() {
     assert_eq!(ans4.is_sat(), true);
 }
 
-fn path_to_string(path: &Path) -> std::io::Result<String> {
-    let file = File::open(path);
-    let mut s = String::new();
-    file.and_then(|mut f| f.read_to_string(&mut s))?;
-    Ok(s)
-}
-
 pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
     //for path in glob("tests/uf50-218/*.cnf").unwrap() {
     //for path in glob("tests/uf100-430/uf100-010.cnf").unwrap() {
@@ -61,7 +52,7 @@ pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
         //for path in glob("tests/uf175-753/uf175-010.cnf").unwrap() {
         //for path in glob("tests/sat/uf20-0584.cnf").unwrap() {
         println!("{:?}", &path);
-        let s: String = path_to_string(&path.unwrap()).unwrap();
+        let s = fs::read_to_string(&path.unwrap()).unwrap();
         match parse::parse_file(s) {
             Ok(cnf) => {
                 let mut solver: Solver = SATSolver::create(cnf.clone(), None);
