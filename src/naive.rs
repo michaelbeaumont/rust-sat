@@ -1,5 +1,6 @@
 use super::Satness::{SAT, UNSAT};
 use super::{Clause, Interp, Lit, SATSolver, Satness, CNF};
+use log::{debug, info};
 use std::collections::VecDeque;
 use vec_map::VecMap;
 

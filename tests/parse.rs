@@ -1,13 +1,9 @@
-extern crate sat;
-
+use sat::parse;
+use sat::Id;
+use sat::Lit::{N, P};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-
-use sat::parse;
-
-use sat::Id;
-use sat::Lit::{N, P};
 
 #[test]
 fn parse_file() {

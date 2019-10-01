@@ -1,17 +1,10 @@
-extern crate glob;
-
-extern crate sat;
-
+use glob::glob;
+use sat::parse;
+use sat::Lit::{N, P};
+use sat::{check, Id, SATSolver, Satness};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-
-use self::glob::glob;
-
-use sat::Lit::{N, P};
-use sat::{check, Id, SATSolver, Satness};
-
-use sat::parse;
 
 pub fn test_solve_simple<Solver: SATSolver>() {
     let cnf1 = vec![vec![P(Id(1)), N(Id(2))], vec![N(Id(1))]];

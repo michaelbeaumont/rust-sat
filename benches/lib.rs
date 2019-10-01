@@ -1,9 +1,4 @@
-#[macro_use]
-extern crate criterion;
-extern crate glob;
-extern crate sat;
-
-use criterion::Criterion;
+use criterion::{criterion_group, criterion_main, Criterion};
 use glob::glob;
 use sat::{check, naive, nonchro, parse, watch, SATSolver, Satness};
 use std::fs::File;

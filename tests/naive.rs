@@ -1,5 +1,3 @@
-extern crate sat;
-
 use sat::naive::Solver;
 
 mod satsolver;

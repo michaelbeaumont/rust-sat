@@ -1,12 +1,11 @@
-use std::collections::VecDeque;
-use vec_map::Entry::{Occupied, Vacant};
-use vec_map::VecMap;
-
+use self::Safety::{Conflict, Safe};
 use super::Satness;
 use super::Satness::{SAT, UNSAT};
 use super::{Clause, Interp, Lit, SATSolver, CNF};
-
-use self::Safety::{Conflict, Safe};
+use log::info;
+use std::collections::VecDeque;
+use vec_map::Entry::{Occupied, Vacant};
+use vec_map::VecMap;
 
 //Watched clauses
 #[derive(Debug)]

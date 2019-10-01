@@ -1,19 +1,11 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate docopt;
-extern crate env_logger;
-extern crate log;
-extern crate sat;
-extern crate serde;
-
 use docopt::Docopt;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-
 use sat::parse;
 use sat::{naive, nonchro, watch};
 use sat::{SATSolver, Satness};
+use serde::Deserialize;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 
 // Write the Docopt usage string.
 const USAGE: &'static str = "

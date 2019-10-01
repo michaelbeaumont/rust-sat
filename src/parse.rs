@@ -1,7 +1,6 @@
+use super::{Clause, Id, Lit, CNF};
 use std::fmt::Debug;
 use std::str::CharIndices;
-
-use super::{Clause, Id, Lit, CNF};
 
 #[derive(Debug)]
 pub enum ParseError {
