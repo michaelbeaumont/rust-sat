@@ -1,19 +1,19 @@
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
-extern crate log;
-extern crate env_logger;
 extern crate docopt;
+extern crate env_logger;
+extern crate log;
 extern crate sat;
+extern crate serde;
 
-use std::path::Path;
+use docopt::Docopt;
 use std::fs::File;
 use std::io::Read;
-use docopt::Docopt;
+use std::path::Path;
 
 use sat::parse;
-use sat::{Satness, SATSolver};
-use sat::{naive, watch, nonchro};
+use sat::{naive, nonchro, watch};
+use sat::{SATSolver, Satness};
 
 // Write the Docopt usage string.
 const USAGE: &'static str = "
@@ -26,7 +26,11 @@ Options:
 ";
 
 #[derive(Deserialize)]
-enum SolverType { Naive, Watch, Nonchro }
+enum SolverType {
+    Naive,
+    Watch,
+    Nonchro,
+}
 
 #[derive(Deserialize)]
 struct Args {
@@ -47,7 +51,9 @@ pub fn solve_file<Solver: SATSolver>(mut solver: Solver) {
 }
 
 pub fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.deserialize()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.deserialize())
+        .unwrap_or_else(|e| e.exit());
 
     let filename: &str = args.arg_inputfile.as_ref();
     let file = File::open(&Path::new(filename));
@@ -55,21 +61,14 @@ pub fn main() {
 
     let file_read = file.and_then(|mut f| f.read_to_string(&mut contents));
     match file_read {
-        Ok(_) => {
-            match parse::parse_file(contents) {
-                Ok(cnf) => {
-                    match args.flag_solver {
-                        Some(SolverType::Naive) =>
-                            solve_file(naive::Solver::create(cnf, None)),
-                        Some(SolverType::Watch) =>
-                            solve_file(watch::Solver::create(cnf, None)),
-                        _ =>
-                            solve_file(nonchro::Solver::create(cnf, None))
-                    }
-                },
-                Err(_)  => panic!("Error parsing file encountered.")
-            }
-        }
-        Err(_) => panic!("Error reading file encountered.")
+        Ok(_) => match parse::parse_file(contents) {
+            Ok(cnf) => match args.flag_solver {
+                Some(SolverType::Naive) => solve_file(naive::Solver::create(cnf, None)),
+                Some(SolverType::Watch) => solve_file(watch::Solver::create(cnf, None)),
+                _ => solve_file(nonchro::Solver::create(cnf, None)),
+            },
+            Err(_) => panic!("Error parsing file encountered."),
+        },
+        Err(_) => panic!("Error reading file encountered."),
     }
 }

@@ -1,20 +1,20 @@
-use vec_map::VecMap;
-use vec_map::Entry::{Occupied, Vacant};
 use bit_set::BitSet;
-use std::collections::VecDeque;
 use std::cmp::max;
+use std::collections::VecDeque;
+use vec_map::Entry::{Occupied, Vacant};
+use vec_map::VecMap;
 
-use super::{Id, Lit, Map, Interp, CNF, Clause, SATSolver};
 use super::Satness;
 use super::Satness::{SAT, UNSAT};
+use super::{Clause, Id, Interp, Lit, Map, SATSolver, CNF};
 
-use self::Safety::{Safe, Conflict};
+use self::Safety::{Conflict, Safe};
 
 //Watched clauses
 #[derive(Debug)]
 struct WatchedClause {
     indices: (usize, usize),
-    cls: Clause
+    cls: Clause,
 }
 
 struct FstOrSnd(bool);
@@ -24,7 +24,7 @@ pub enum PropRes {
     Conflict,
     True,
     Unit(Lit),
-    NewWatch(Lit)
+    NewWatch(Lit),
 }
 
 impl WatchedClause {
@@ -38,30 +38,29 @@ impl WatchedClause {
 
     fn get_other_watched(&self, &FstOrSnd(watch_info): &FstOrSnd) -> &Lit {
         if watch_info {
-            &self.cls[self.indices.0]}
-        else {
-            &self.cls[self.indices.1]}
+            &self.cls[self.indices.0]
+        } else {
+            &self.cls[self.indices.1]
+        }
     }
 
     fn set_watched(&mut self, &FstOrSnd(watch_info): &FstOrSnd, ind: usize) {
         if watch_info {
-            self.indices.1 = ind;}
-        else {
-            self.indices.0 = ind;}
+            self.indices.1 = ind;
+        } else {
+            self.indices.0 = ind;
+        }
     }
 
-    fn bcp(&mut self,
-               interp: &Interp,
-               lit: &Lit)
-               -> PropRes
-    {
+    fn bcp(&mut self, interp: &Interp, lit: &Lit) -> PropRes {
         let watch_info = self.get_watch_info(lit);
         let other_lit = self.get_other_watched(&watch_info).clone();
         let other_val = interp.get_val(&other_lit);
         if other_val.is_some() && other_val.unwrap() {
-            return PropRes::True;}
+            return PropRes::True;
+        }
         let mut new_ind = None;
-        for i in (0..self.cls.len()).filter( |&i| !self.is_watched(i)) {
+        for i in (0..self.cls.len()).filter(|&i| !self.is_watched(i)) {
             let test_lit = &self.cls[i];
             let curr_val = interp.get_val(test_lit);
             if curr_val.is_none() || curr_val.unwrap() {
@@ -73,9 +72,10 @@ impl WatchedClause {
         match new_ind {
             None => {
                 if other_val.is_some() && !other_val.unwrap() {
-                    PropRes::Conflict }
-                else {
-                    PropRes::Unit(other_lit)}
+                    PropRes::Conflict
+                } else {
+                    PropRes::Unit(other_lit)
+                }
             }
             Some(ind) => {
                 self.set_watched(&watch_info, ind);
@@ -85,31 +85,29 @@ impl WatchedClause {
     }
 }
 
-fn add_watched(watches: &mut VecMap<Vec<usize>>,
-               lit: &Lit,
-               ind: usize)
-{
+fn add_watched(watches: &mut VecMap<Vec<usize>>, lit: &Lit, ind: usize) {
     let id = lit.not().as_usize();
     match watches.entry(id) {
-        Vacant(entry) => {entry.insert(vec![ind]);},
-        Occupied(entry) => entry.into_mut().push(ind)}
+        Vacant(entry) => {
+            entry.insert(vec![ind]);
+        }
+        Occupied(entry) => entry.into_mut().push(ind),
+    }
 }
 
-fn get_impl_clause<'a>(cls: &'a Clause,
-                       confl_lit: Option<&'a Lit>)
-                       -> Box<Iterator<Item = Lit> + 'a>
-{
+fn get_impl_clause<'a>(
+    cls: &'a Clause,
+    confl_lit: Option<&'a Lit>,
+) -> Box<Iterator<Item = Lit> + 'a> {
     match confl_lit {
         None => Box::new(cls.iter().map(|l| l.not())),
-        Some(confl_val) => { 
-            Box::new(cls.iter().filter_map(
-                move |lit| 
-                if lit == confl_val {
-                    None }
-                else {
-                    Some(lit.not())
-                }))
-        }
+        Some(confl_val) => Box::new(cls.iter().filter_map(move |lit| {
+            if lit == confl_val {
+                None
+            } else {
+                Some(lit.not())
+            }
+        })),
     }
 }
 
@@ -138,12 +136,12 @@ pub struct Solver {
     watches: WatcherList,
 
     //tracking decision level and implicants
-    track: Map<DecInfo>
+    track: Map<DecInfo>,
 }
 
 enum Safety {
     Safe,
-    Conflict
+    Conflict,
 }
 
 impl Solver {
@@ -152,16 +150,15 @@ impl Solver {
     }
 
     fn find_var(&self) -> Option<Lit> {
-        for x in self.clss.iter().flat_map( |x| x.cls.iter()) {
+        for x in self.clss.iter().flat_map(|x| x.cls.iter()) {
             if self.interp.get_val(x).is_none() {
-                return Some(x.clone());}}
+                return Some(x.clone());
+            }
+        }
         None
     }
 
-    fn set_true(&mut self,
-                       lit: &Lit,
-                       cause: Implicant)
-    {
+    fn set_true(&mut self, lit: &Lit, cause: Implicant) {
         self.interp.set_true(lit);
         let dec_lvl = self.level();
         let &Id(id) = lit.id();
@@ -170,40 +167,36 @@ impl Solver {
 
     fn add_clause(&mut self, this_lit: &Lit, cls: Clause) -> usize {
         let new_ind: usize = self.clss.len();
-        let mut indices = (0,0);
+        let mut indices = (0, 0);
         let mut max_dec = 0;
         for i in 0..cls.len() {
             let lit = &cls[i];
             let &Id(id) = lit.id();
             if lit == this_lit {
                 indices.0 = i;
-            }
-            else {
-                self.track.get(id).map(
-                    |&(DecLevel(dec),_)|
+            } else {
+                self.track.get(id).map(|&(DecLevel(dec), _)| {
                     if dec > max_dec {
                         max_dec = dec;
                         indices.1 = i;
-                    });
+                    }
+                });
             }
         }
         add_watched(&mut self.watches, &cls[indices.0], new_ind);
         add_watched(&mut self.watches, &cls[indices.1], new_ind);
-        self.clss.push(WatchedClause{indices: indices, cls: cls});
+        self.clss.push(WatchedClause {
+            indices: indices,
+            cls: cls,
+        });
         new_ind
     }
 
-    fn trace_conflict(
-        &self,
-        curr_dec_lvl: &DecLevel,
-        confl: &Clause)
-        -> (Clause, DecLevel)
-    {
+    fn trace_conflict(&self, curr_dec_lvl: &DecLevel, confl: &Clause) -> (Clause, DecLevel) {
         let mut learned = Vec::new();
         let mut back_lvl = DecLevel(0);
 
-        let mut lit_queue: VecDeque<Lit> =
-            get_impl_clause(confl, None).collect();
+        let mut lit_queue: VecDeque<Lit> = get_impl_clause(confl, None).collect();
 
         let mut seen = BitSet::new();
 
@@ -234,64 +227,52 @@ impl Solver {
     }
 
     fn check_watchers(&mut self, lit: Lit) -> Implicant {
-        self.watches.get(lit.as_usize()).cloned().and_then(
-            |clause_inds| {
+        self.watches
+            .get(lit.as_usize())
+            .cloned()
+            .and_then(|clause_inds| {
                 let mut new_inds = Vec::new();
                 let mut conflict_seen = None;
                 for cls_ind in clause_inds {
                     if conflict_seen.is_some() {
                         new_inds.push(cls_ind);
-                        continue;}
-                    let bcp_res =
-                        self.clss[cls_ind].bcp(
-                            &self.interp,
-                            &lit);
-                    if let PropRes::NewWatch(new_lit) = bcp_res {
-                        add_watched(
-                            &mut self.watches,
-                            &new_lit,
-                            cls_ind);
+                        continue;
                     }
-                    else {
+                    let bcp_res = self.clss[cls_ind].bcp(&self.interp, &lit);
+                    if let PropRes::NewWatch(new_lit) = bcp_res {
+                        add_watched(&mut self.watches, &new_lit, cls_ind);
+                    } else {
                         new_inds.push(cls_ind);
                         if let PropRes::Conflict = bcp_res {
                             conflict_seen = Some(cls_ind);
-                        }
-                        else if let PropRes::Unit(unit_lit) = bcp_res {
-                            self.prop_queue.push_back(
-                                (unit_lit,
-                                 Some(cls_ind)));
+                        } else if let PropRes::Unit(unit_lit) = bcp_res {
+                            self.prop_queue.push_back((unit_lit, Some(cls_ind)));
                         }
                     }
                 }
                 self.watches.insert(lit.as_usize(), new_inds);
                 conflict_seen
-        })
+            })
     }
 
     fn decide_var(&mut self, lit: Option<Lit>) -> Option<Safety> {
-        lit.or_else(|| self.find_var()).map(
-            |decision| {
+        lit.or_else(|| self.find_var()).map(|decision| {
             // here we need to pick a new var
             // because we know nothing more is constrainted
             // pick it and add it to the stack
-                info!("Trying {:?}, set: {:?} -> {:?}",
-                      decision,
-                      decision.id(),
-                      decision.eval(true));
-                self.interp_stack.push(
-                    (decision.clone(),
-                     self.interp.clone(),
-                     self.track.clone()
-                     ));
-                self.process(decision, None)})
+            info!(
+                "Trying {:?}, set: {:?} -> {:?}",
+                decision,
+                decision.id(),
+                decision.eval(true)
+            );
+            self.interp_stack
+                .push((decision.clone(), self.interp.clone(), self.track.clone()));
+            self.process(decision, None)
+        })
     }
 
-    fn backtrack(
-        &mut self,
-        cause: Clause,
-        DecLevel(back_lvl): DecLevel
-    ) -> Safety {
+    fn backtrack(&mut self, cause: Clause, DecLevel(back_lvl): DecLevel) -> Safety {
         self.interp_stack.truncate(back_lvl);
         match self.interp_stack.pop() {
             //here use the learned clause as a cause
@@ -300,30 +281,24 @@ impl Solver {
                 self.interp = interp;
                 self.track = trace;
                 let new_ind = self.add_clause(&last_not, cause);
-                self.interp_stack.push(
-                    (last.not(),
-                     self.interp.clone(),
-                     self.track.clone()
-                     ));
+                self.interp_stack
+                    .push((last.not(), self.interp.clone(), self.track.clone()));
                 self.prop_queue.clear();
-                self.process(last_not, Some(new_ind))}
+                self.process(last_not, Some(new_ind))
+            }
             None => {
                 info!("Hit root level, UNSAT");
-                Conflict}}
+                Conflict
+            }
+        }
     }
 
     fn handle_conflict(&mut self, conf_i: usize) -> (Clause, DecLevel) {
         let mut dec_lvl = self.level();
-        let (mut cause, mut back_lvl) =
-            self.trace_conflict(
-                &dec_lvl,
-                &self.clss[conf_i].cls);
+        let (mut cause, mut back_lvl) = self.trace_conflict(&dec_lvl, &self.clss[conf_i].cls);
         while back_lvl < dec_lvl {
             dec_lvl = back_lvl;
-            let trace =
-                self.trace_conflict(
-                    &dec_lvl,
-                    &cause);
+            let trace = self.trace_conflict(&dec_lvl, &cause);
             //uuugly
             cause = trace.0;
             back_lvl = trace.1;
@@ -331,11 +306,7 @@ impl Solver {
         (cause, back_lvl)
     }
 
-    fn process(&mut self,
-               constr_lit: Lit,
-               cause: Implicant)
-               -> Safety
-    {
+    fn process(&mut self, constr_lit: Lit, cause: Implicant) -> Safety {
         self.set_true(&constr_lit, cause);
         match self.check_watchers(constr_lit) {
             None => Safe,
@@ -350,7 +321,9 @@ impl Solver {
     fn process_queue(&mut self) -> Safety {
         while let Some((constr_lit, cause)) = self.prop_queue.pop_front() {
             let process = self.process(constr_lit, cause);
-            if let Conflict = process { return Conflict}
+            if let Conflict = process {
+                return Conflict;
+            }
         }
         Safe
     }
@@ -362,18 +335,29 @@ impl SATSolver for Solver {
         //let mut watches = HashMap::<Lit, Vec<usize>>::new();
         let mut watches = VecMap::new();
         let mut ind: usize = 0;
-        let clss = formula.into_iter().map(|cls|{
-            for lit in cls.iter().take(2) {
-                add_watched(&mut watches, lit, ind);}
-            ind = ind + 1;
-            if cls.len() > 1 {
-                WatchedClause{indices: (0,1), cls: cls}
-            } else {
-                WatchedClause{indices: (0,0), cls: cls} }
-        }).collect();
+        let clss = formula
+            .into_iter()
+            .map(|cls| {
+                for lit in cls.iter().take(2) {
+                    add_watched(&mut watches, lit, ind);
+                }
+                ind = ind + 1;
+                if cls.len() > 1 {
+                    WatchedClause {
+                        indices: (0, 1),
+                        cls: cls,
+                    }
+                } else {
+                    WatchedClause {
+                        indices: (0, 0),
+                        cls: cls,
+                    }
+                }
+            })
+            .collect();
         //debug!("Watched: {:?}",clss);
         //debug!("Watches: {:?}",watches);
-        Solver{
+        Solver {
             interp: interp.unwrap_or_else(|| Interp(VecMap::new())),
             interp_stack: Vec::new(),
             clss,
@@ -385,36 +369,38 @@ impl SATSolver for Solver {
 
     fn solve(&mut self) -> Satness {
         //handle top level units
-        for unit in self.clss.iter().filter_map(
-            |c| if c.cls.len() == 1 {
+        for unit in self.clss.iter().filter_map(|c| {
+            if c.cls.len() == 1 {
                 Some(c.cls[0].clone())
-            } else {None}
-        ) {
+            } else {
+                None
+            }
+        }) {
             info!("Found top level unit: {:?}", unit);
-            self.prop_queue.push_back((unit,None))}
+            self.prop_queue.push_back((unit, None))
+        }
 
         //main loop
         loop {
             let processing = match self.process_queue() {
-                Safe =>
-                    match self.decide_var(None) {
-                        None => return SAT(self.interp.clone()),
-                        Some(safety) => safety},
-                e => e
+                Safe => match self.decide_var(None) {
+                    None => return SAT(self.interp.clone()),
+                    Some(safety) => safety,
+                },
+                e => e,
             };
 
             if let Conflict = processing {
                 let reason = format!("Found conflict");
-                return UNSAT(reason)
+                return UNSAT(reason);
             }
         }
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::super::Lit::{P,N};
+    use super::super::Lit::{N, P};
     use super::super::{Id, SATSolver};
     use super::Solver;
 
@@ -435,9 +421,13 @@ mod tests {
         let _clause9 = vec![N(Id(7)), N(Id(8)), N(Id(13))];
         let _clause10 = vec![N(Id(12)), P(Id(13))];
         let clause11 = vec![P(Id(10)), N(Id(11))];
-        let mut solver: Solver = Solver::create(vec![
-            _clause1,_clause2,_clause3,_clause4,_clause5,_clause6,
-            _clause7,_clause8,_clause9,_clause10,clause11], None);
+        let mut solver: Solver = Solver::create(
+            vec![
+                _clause1, _clause2, _clause3, _clause4, _clause5, _clause6, _clause7, _clause8,
+                _clause9, _clause10, clause11,
+            ],
+            None,
+        );
         solver.decide_var(Some(N(Id(9))));
         solver.process_queue();
         solver.decide_var(Some(P(Id(12))));

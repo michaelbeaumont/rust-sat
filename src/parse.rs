@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 use std::str::CharIndices;
 
-use super::{Id, Lit, CNF, Clause};
+use super::{Clause, Id, Lit, CNF};
 
 #[derive(Debug)]
 pub enum ParseError {
     Syntax(Box<Debug>),
-    EOF(usize)
+    EOF(usize),
 }
 
 pub type Parse<T> = Result<T, ParseError>;
@@ -29,22 +29,26 @@ struct CNFParser<'a> {
     curr: char,
     pos: usize,
     //buff: String
-    buff: CharIndices<'a>
+    buff: CharIndices<'a>,
 }
 
 impl<'a> CNFParser<'a> {
     fn new(buff: &'a String) -> CNFParser<'a> {
         let buff_ = buff.char_indices();
-        CNFParser { curr: ' ', pos: 0, buff: buff_}
+        CNFParser {
+            curr: ' ',
+            pos: 0,
+            buff: buff_,
+        }
     }
 
     fn parse_file(&mut self) -> Parse<CNF> {
         let mut formula = Vec::new();
         loop {
             match self.parse_line() {
-                Ok(Some(cls))               => formula.push(cls),
-                Ok(None)                    => return Ok(formula),
-                Err(e)                      => return Err(e)
+                Ok(Some(cls)) => formula.push(cls),
+                Ok(None) => return Ok(formula),
+                Err(e) => return Err(e),
             }
             try!(self.take());
         }
@@ -63,8 +67,7 @@ impl<'a> CNFParser<'a> {
         //indicating nothing left to parse
         else if self.curr == '0' {
             Ok(None)
-        }
-        else {
+        } else {
             self.parse_clause().map(Some)
         }
     }
@@ -77,12 +80,12 @@ impl<'a> CNFParser<'a> {
         while self.curr != '0' {
             match self.parse_lit() {
                 Ok(lit) => clause.push(lit),
-                Err(e) => return Err(e)
+                Err(e) => return Err(e),
             }
             //remove whitespace inbetween
             match self.consume_whitespace() {
                 Err(ParseError::EOF(_)) => break,
-                Err(e)                  => return Err(e),
+                Err(e) => return Err(e),
                 _ => {}
             }
         }
@@ -92,11 +95,9 @@ impl<'a> CNFParser<'a> {
     fn parse_lit(&mut self) -> Parse<Lit> {
         //move through any whitespace
         try!(self.consume_whitespace());
-        if self.curr == '-' { 
-            self.take().and_then(
-                |()| self.parse_ident().map(Lit::N))
-        }
-        else { 
+        if self.curr == '-' {
+            self.take().and_then(|()| self.parse_ident().map(Lit::N))
+        } else {
             self.parse_ident().map(Lit::P)
         }
     }
@@ -108,11 +109,13 @@ impl<'a> CNFParser<'a> {
             //TODO: make this better with eof maybe self.curr is Option
             match self.take() {
                 Err(ParseError::EOF(_)) => break,
-                Err(e)                    => return Err(e),
+                Err(e) => return Err(e),
                 _ => {}
             }
         }
-        lit.parse().map(Id).map_err(|e| ParseError::Syntax(Box::new(e)))
+        lit.parse()
+            .map(Id)
+            .map_err(|e| ParseError::Syntax(Box::new(e)))
         /*match lit.parse() {
             Ok(lit)     => Ok(Id(lit)),
             Err(e)      => Err(ParseError::Syntax(box e))

@@ -2,21 +2,19 @@ extern crate glob;
 
 extern crate sat;
 
+use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use std::fs::File;
 
 use self::glob::glob;
 
-use sat::{Id, Satness, check, SATSolver};
-use sat::Lit::{P, N};
+use sat::Lit::{N, P};
+use sat::{check, Id, SATSolver, Satness};
 
 use sat::parse;
 
 pub fn test_solve_simple<Solver: SATSolver>() {
-    let cnf1 = vec![vec![P(Id(1)), N(Id(2))],
-                    vec![N(Id(1))]
-                    ];
+    let cnf1 = vec![vec![P(Id(1)), N(Id(2))], vec![N(Id(1))]];
     println!("Test 1: {:?}", cnf1);
     let mut state1: Solver = SATSolver::create(cnf1, None);
     let ans1 = state1.solve();
@@ -30,22 +28,24 @@ pub fn test_solve_simple<Solver: SATSolver>() {
     println!("{:?}", ans2);
     assert_eq!(ans2.is_sat(), false);
 
-    let cnf3 = vec![vec![N(Id(1)), P(Id(1))],
-                    vec![P(Id(1)), P(Id(2))],
-                    vec![P(Id(1)), N(Id(2))]
-                    ];
+    let cnf3 = vec![
+        vec![N(Id(1)), P(Id(1))],
+        vec![P(Id(1)), P(Id(2))],
+        vec![P(Id(1)), N(Id(2))],
+    ];
     println!("Test 3: {:?}", cnf3);
     let mut state3: Solver = SATSolver::create(cnf3, None);
     let ans3 = state3.solve();
     println!("{:?}", ans3);
     assert_eq!(ans3.is_sat(), true);
 
-    let cnf4 = vec![vec![N(Id(1)), P(Id(1))],
-                    vec![P(Id(1)), P(Id(2)), P(Id(3))],
-                    vec![P(Id(1)), P(Id(2)), N(Id(3))],
-                    vec![P(Id(1)), N(Id(2)), P(Id(3))],
-                    vec![P(Id(1)), N(Id(2)), N(Id(3))]
-                    ];
+    let cnf4 = vec![
+        vec![N(Id(1)), P(Id(1))],
+        vec![P(Id(1)), P(Id(2)), P(Id(3))],
+        vec![P(Id(1)), P(Id(2)), N(Id(3))],
+        vec![P(Id(1)), N(Id(2)), P(Id(3))],
+        vec![P(Id(1)), N(Id(2)), N(Id(3))],
+    ];
     println!("Test 4: {:?}", cnf4);
     let mut state4: Solver = SATSolver::create(cnf4, None);
     let ans4 = state4.solve();
@@ -65,8 +65,8 @@ pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
     //for path in glob("tests/uf100-430/uf100-010.cnf").unwrap() {
     //for path in glob("tests/uf125-538/uf125-010.cnf").unwrap() {
     for path in glob(path).unwrap() {
-    //for path in glob("tests/uf175-753/uf175-010.cnf").unwrap() {
-    //for path in glob("tests/sat/uf20-0584.cnf").unwrap() {
+        //for path in glob("tests/uf175-753/uf175-010.cnf").unwrap() {
+        //for path in glob("tests/sat/uf20-0584.cnf").unwrap() {
         println!("{:?}", &path);
         let s: String = path_to_string(&path.unwrap()).unwrap();
         match parse::parse_file(s) {
@@ -77,11 +77,11 @@ pub fn test_solve_file<Solver: SATSolver>(path: &str, sat: bool) {
                 if sat {
                     match solvable {
                         Satness::UNSAT(_) => panic!("UNSAT"),
-                        Satness::SAT(interp) => assert_eq!(check(&cnf, &interp), true)
+                        Satness::SAT(interp) => assert_eq!(check(&cnf, &interp), true),
                     }
                 }
-            },
-            _     => panic!("Error parsing file")
+            }
+            _ => panic!("Error parsing file"),
         }
     }
 }
