@@ -12,3 +12,11 @@ bit-set="0.5.0"
 docopt="1.0.1"
 serde="1.0.80"
 serde_derive="1.0.80"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "sat_bench"
+path = "benches/lib.rs"
+harness = false
