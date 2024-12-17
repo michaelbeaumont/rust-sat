@@ -14,7 +14,7 @@ docopt = "1.1"
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.5"
 
 [[bench]]
 name = "sat_bench"
