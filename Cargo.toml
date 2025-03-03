@@ -5,7 +5,7 @@ authors = ["michaelbeaumont <mjboamail@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-log = "0.4.5"
+log = "0.4.26"
 env_logger = "0.11.2"
 glob = "0.3"
 vec_map = "0.8.1"
